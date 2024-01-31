@@ -19,6 +19,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   Future<AiringModel>? _AiringModel;
   Future<ToprateModel>? _ToprareModel;
   Future<KeywordModel>? _keyword;
+  TextEditingController _textEditingController = TextEditingController();
+  String search = '';
   @override
   void initState() {
     _AiringModel = ServiceNetwork().getAiringDio();
@@ -26,6 +28,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     super.initState();
   }
 
+  // onSearch(String search) {
+
+  // }
   @override
   Widget build(BuildContext context) {
     final TabController _tabController = TabController(length: 3, vsync: this);
@@ -37,7 +42,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             Padding(
               padding: const EdgeInsets.all(12),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween  ,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Container(
                     child: Text(
@@ -49,6 +54,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   Container(
                     width: 110,
                     child: TextField(
+                      controller: _textEditingController,
+                      onChanged: (String? value) => {
+                        print(value),
+                        setState(() {
+                          search = value.toString();
+                        })
+                      },
                       decoration: InputDecoration(
                         border: InputBorder.none,
                         suffixIcon: Icon(Icons.search),
@@ -107,8 +119,81 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           mainAxisExtent: 290,
                         ),
                         itemBuilder: (context, index) {
+                          var position = index.toString();
                           var tv = snapshot.data!.results?[index];
-                          return Padding(
+                          if (_textEditingController.text.isEmpty) {
+                            return Padding(
+                              padding: const EdgeInsets.all(12),
+                              child: GestureDetector(
+                                onTap: () => Navigator.pushNamed(
+                                    context, AppRoute.detailRoute,
+                                    arguments: tv),
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.white12,
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      ClipRRect(
+                                          borderRadius: BorderRadius.only(
+                                            topLeft: Radius.circular(20),
+                                            topRight: Radius.circular(20),
+                                          ),
+                                          child: Image.network(
+                                            'https://image.tmdb.org/t/p/w500' +
+                                                (tv?.posterPath ?? ''),
+                                            height: 110,
+                                            width: double.infinity,
+                                            fit: BoxFit.cover,
+                                          )),
+                                      Padding(
+                                        padding: const EdgeInsets.all(10),
+                                        child: Text(
+                                          tv!.name ?? '',
+                                          style: GoogleFonts.poppins(
+                                              fontSize: 16,
+                                              color: Colors.white),
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                      Padding(
+                                        padding: const EdgeInsets.only(
+                                            top: 5,
+                                            bottom: 5,
+                                            left: 10,
+                                            right: 10),
+                                        child: RatingStars(
+                                          valueLabelVisibility: false,
+                                          maxValue: 10,
+                                          starSize: 10,
+                                          starCount: tv.voteAverage!.toInt(),
+                                          value: tv.voteAverage!.toDouble(),
+                                        ),
+                                      ),
+                                      Flexible(
+                                          child: Padding(
+                                        padding: const EdgeInsets.all(10),
+                                        child: Text(tv.overview ?? '',
+                                            style: GoogleFonts.poppins(
+                                                fontSize: 10,
+                                                color: Colors.grey),
+                                            maxLines: 3,
+                                            overflow: TextOverflow.fade,
+                                            softWrap: true),
+                                      ))
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            );
+                          }
+
+                         else if (tv!.name!.toLowerCase().toString().contains(_textEditingController.text.toLowerCase())) {
+                            return Padding(
                             padding: const EdgeInsets.all(12),
                             child: GestureDetector(
                               onTap: () => Navigator.pushNamed(
@@ -140,8 +225,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                         tv!.name ?? '',
                                         style: GoogleFonts.poppins(
                                             fontSize: 16, color: Colors.white),
-                                            maxLines: 2,
-                                            overflow: TextOverflow.ellipsis,
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
                                       ),
                                     ),
                                     Padding(
@@ -173,14 +258,16 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                               ),
                             ),
                           );
+                          }
+                          else{
+                            return Center(child: CircularProgressIndicator());
+                          }
                         },
                       );
                     } else {
-                      return Text(
-                        '${snapshot}',
-                        style: TextStyle(color: Colors.white),
-                      );
+                      return Center(child: CircularProgressIndicator());
                     }
+                    return Container();
                   },
                 ),
                 FutureBuilder(
@@ -274,7 +361,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
                 Center(
                   child: Container(
-                    child: Text('Save',style: GoogleFonts.poppins(color: Colors.white),),
+                    child: Text(
+                      'Save',
+                      style: GoogleFonts.poppins(color: Colors.white),
+                    ),
                   ),
                 )
 
