@@ -1,0 +1,29 @@
+workflows:
+  my-flutter-ios-debug-workflow: # อาจจะสร้าง workflow ใหม่สำหรับ Debug
+    environment:
+      flutter: stable
+      xcode: latest
+      cocoapods: 1.15.2
+      # ... (อื่นๆ)
+
+    steps:
+      - name: Install Flutter dependencies
+        script:
+          - flutter pub get
+
+      - name: Install iOS dependencies (CocoaPods)
+        script:
+          - cd ios
+          - pod install --repo-update
+          - cd ..
+
+      - name: Build iOS IPA (Debug)
+        script:
+          - flutter build ipa --debug # เปลี่ยนจาก --release เป็น --debug
+
+    artifacts:
+      - build/ios/ipa/*.ipa
+      # ... (อื่นๆ)
+
+      # ... (ตั้งค่าการเผยแพร่ เช่น email หรือ Firebase App Distribution)
+      # App Store Connect ก็รองรับการอัปโหลด Debug Build ไป TestFlight ได้
