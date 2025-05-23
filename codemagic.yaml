@@ -1,12 +1,13 @@
 workflows:
-  my-flutter-ios-debug-workflow: # อาจจะสร้าง workflow ใหม่สำหรับ Debug
-    environment:
+  my-flutter-ios-debug-workflow: # <- ID ของ Workflow (ระดับ 1)
+    environment:                 # <- 'environment' เยื้อง 2 space จาก ID (ระดับ 2)
       flutter: stable
       xcode: latest
       cocoapods: 1.15.2
-      # ... (อื่นๆ)
 
-    steps:
+    # !!!!!!! ตรงนี้สำคัญ !!!!!!!
+    # 'steps' ต้องเยื้อง 2 space จาก ID ของ Workflow เช่นเดียวกับ 'environment'
+    steps:                       # <- 'steps' เยื้อง 2 space จาก ID (ระดับ 2)
       - name: Install Flutter dependencies
         script:
           - flutter pub get
@@ -15,15 +16,19 @@ workflows:
         script:
           - cd ios
           - pod install --repo-update
+          - cd ba
           - cd ..
 
       - name: Build iOS IPA (Debug)
         script:
-          - flutter build ipa --debug # เปลี่ยนจาก --release เป็น --debug
+          - flutter build ipa --debug
 
-    artifacts:
+    artifacts:                   # <- 'artifacts' ก็ต้องเยื้อง 2 space จาก ID เช่นกัน (ระดับ 2)
       - build/ios/ipa/*.ipa
-      # ... (อื่นๆ)
 
-      # ... (ตั้งค่าการเผยแพร่ เช่น email หรือ Firebase App Distribution)
-      # App Store Connect ก็รองรับการอัปโหลด Debug Build ไป TestFlight ได้
+    publishing:                  # <- 'publishing' ก็ต้องเยื้อง 2 space จาก ID เช่นกัน (ระดับ 2)
+      email:
+        recipients:
+          - your.email@example.com
+        success: true
+        failure: true
