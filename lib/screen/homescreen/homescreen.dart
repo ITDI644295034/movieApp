@@ -1,9 +1,14 @@
+import 'dart:convert';
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_stars/flutter_rating_stars.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:miniprojectmovieapp/config/approute.dart';
 import 'package:miniprojectmovieapp/config/network_service.dart';
 import 'package:miniprojectmovieapp/model/keyword_model.dart';
+import 'package:miniprojectmovieapp/provider/favorite_provider.dart';
+import 'package:provider/provider.dart';
 
 import '../../model/airing_model.dart';
 import '../../model/toprate_model.dart';
@@ -16,6 +21,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
+  late TabController _tabController;
   Future<AiringModel>? _AiringModel;
   Future<ToprateModel>? _ToprareModel;
   Future<KeywordModel>? _keyword;
@@ -23,17 +29,29 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   String search = '';
   @override
   void initState() {
+    _tabController = TabController(length: 3, vsync: this);
     _AiringModel = ServiceNetwork().getAiringDio();
     _ToprareModel = ServiceNetwork().getTopRateDio();
+
     super.initState();
   }
 
   // onSearch(String search) {
 
   // }
+
+  @override
+  void dispose() {
+    // TODO: implement dispose
+    _tabController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
-    final TabController _tabController = TabController(length: 3, vsync: this);
+    final provider = Provider.of<FavoriteProvider>(context);
+    log('tv ${provider.favoriteList}');
+
     return Scaffold(
       backgroundColor: Colors.black38,
       body: SafeArea(
@@ -75,18 +93,22 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             SizedBox(
               height: 12,
             ),
-            Container(
-              margin: EdgeInsets.symmetric(horizontal: 15),
-              height: 45,
-              decoration:
-                  BoxDecoration(borderRadius: BorderRadius.circular(50)),
+            Padding(
+              padding: const EdgeInsets.all(12),
               child: TabBar(
+                unselectedLabelStyle: null,
                 controller: _tabController,
-                indicator: BoxDecoration(
-                    color: Colors.amberAccent,
-                    borderRadius: BorderRadius.circular(50)),
-                labelColor: Colors.black,
+                labelColor: Colors.white,
                 unselectedLabelColor: Colors.grey,
+                indicatorColor: Colors.amberAccent,
+                // indicator: BoxDecoration(
+                //   color: Colors.amberAccent, // สีของ indicator
+                //   borderRadius:
+                //       BorderRadius.circular(20), // มุมโค้งของ indicator
+                // ),
+                indicatorPadding: EdgeInsets.zero, // ลบ padding ของ indicator
+                indicatorSize: TabBarIndicatorSize
+                    .tab, // ให้ indicator ครอบคลุมพื้นที่แท็บ
                 tabs: [
                   Tab(
                     text: 'Airing Today',
@@ -95,7 +117,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     text: 'Top Rated',
                   ),
                   Tab(
-                    text: 'Save',
+                    text: 'Favorite',
                   ),
                 ],
               ),
@@ -111,17 +133,21 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   future: _AiringModel,
                   builder: (context, snapshot) {
                     if (snapshot.hasData) {
+                      var filteredData = snapshot.data!.results!
+                          .where((item) => item.name!.toLowerCase().contains(
+                              _textEditingController.text.toLowerCase()))
+                          .toList();
+
                       return GridView.builder(
-                        itemCount: snapshot.data?.results?.length,
-                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          childAspectRatio: 0.68,
-                          mainAxisExtent: 290,
-                        ),
-                        itemBuilder: (context, index) {
-                          var position = index.toString();
-                          var tv = snapshot.data!.results?[index];
-                          if (_textEditingController.text.isEmpty) {
+                          itemCount: filteredData.length,
+                          gridDelegate:
+                              SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            childAspectRatio: 0.68,
+                            mainAxisExtent: 290,
+                          ),
+                          itemBuilder: (context, index) {
+                            var tv = filteredData[index];
                             return Padding(
                               padding: const EdgeInsets.all(12),
                               child: GestureDetector(
@@ -190,99 +216,29 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                 ),
                               ),
                             );
-                          }
-
-                         else if (tv!.name!.toLowerCase().toString().contains(_textEditingController.text.toLowerCase())) {
-                            return Padding(
-                            padding: const EdgeInsets.all(12),
-                            child: GestureDetector(
-                              onTap: () => Navigator.pushNamed(
-                                  context, AppRoute.detailRoute,
-                                  arguments: tv),
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.white12,
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    ClipRRect(
-                                        borderRadius: BorderRadius.only(
-                                          topLeft: Radius.circular(20),
-                                          topRight: Radius.circular(20),
-                                        ),
-                                        child: Image.network(
-                                          'https://image.tmdb.org/t/p/w500' +
-                                              (tv?.posterPath ?? ''),
-                                          height: 110,
-                                          width: double.infinity,
-                                          fit: BoxFit.cover,
-                                        )),
-                                    Padding(
-                                      padding: const EdgeInsets.all(10),
-                                      child: Text(
-                                        tv!.name ?? '',
-                                        style: GoogleFonts.poppins(
-                                            fontSize: 16, color: Colors.white),
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                    Padding(
-                                      padding: const EdgeInsets.only(
-                                          top: 5,
-                                          bottom: 5,
-                                          left: 10,
-                                          right: 10),
-                                      child: RatingStars(
-                                        valueLabelVisibility: false,
-                                        maxValue: 10,
-                                        starSize: 10,
-                                        starCount: tv.voteAverage!.toInt(),
-                                        value: tv.voteAverage!.toDouble(),
-                                      ),
-                                    ),
-                                    Flexible(
-                                        child: Padding(
-                                      padding: const EdgeInsets.all(10),
-                                      child: Text(tv.overview ?? '',
-                                          style: GoogleFonts.poppins(
-                                              fontSize: 10, color: Colors.grey),
-                                          maxLines: 3,
-                                          overflow: TextOverflow.fade,
-                                          softWrap: true),
-                                    ))
-                                  ],
-                                ),
-                              ),
-                            ),
-                          );
-                          }
-                          else{
-                            return Center(child: CircularProgressIndicator());
-                          }
-                        },
-                      );
+                          });
                     } else {
                       return Center(child: CircularProgressIndicator());
                     }
-                    return Container();
                   },
                 ),
                 FutureBuilder(
                   future: _ToprareModel,
                   builder: (context, snapshot) {
                     if (snapshot.hasData) {
+                      var filteredData = snapshot.data!.results!
+                          .where((item) => item.name!.toLowerCase().contains(
+                              _textEditingController.text.toLowerCase()))
+                          .toList();
                       return GridView.builder(
-                        itemCount: snapshot.data?.results?.length,
+                        itemCount: filteredData.length,
                         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: 2,
                           childAspectRatio: 0.68,
                           mainAxisExtent: 290,
                         ),
                         itemBuilder: (context, index) {
-                          var tv = snapshot.data!.results?[index];
+                          var tv = filteredData[index];
                           return Padding(
                             padding: const EdgeInsets.all(12),
                             child: GestureDetector(
@@ -352,21 +308,100 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     }
                   },
                 ),
-                // Center(
-                //   child: Text(
-                //     'Save',
-                //     style: TextStyle(color: Colors.white),
-                //   ),
-                // ),
 
-                Center(
-                  child: Container(
-                    child: Text(
-                      'Save',
-                      style: GoogleFonts.poppins(color: Colors.white),
-                    ),
-                  ),
-                )
+                // Tab 3: Favorite
+                Consumer<FavoriteProvider>(
+                  builder: (context, provider, child) {
+                    var filteredData = provider.favoriteList
+                        .where((item) => item.name!.toLowerCase().contains(
+                            _textEditingController.text.toLowerCase()))
+                        .toList();
+                    if (filteredData.isEmpty) {
+                      return Center(
+                        child: Text(
+                          'No favorites added yet!',
+                          style: GoogleFonts.poppins(
+                              color: Colors.white, fontSize: 16),
+                        ),
+                      );
+                    }
+
+                    return GridView.builder(
+                      itemCount: filteredData.length,
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        childAspectRatio: 0.68,
+                        mainAxisExtent: 290,
+                      ),
+                      itemBuilder: (context, index) {
+                        var tv = filteredData[index];
+                        return Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: GestureDetector(
+                            onTap: () => Navigator.pushNamed(
+                                context, AppRoute.detailRoute,
+                                arguments: tv),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: Colors.white12,
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.only(
+                                      topLeft: Radius.circular(20),
+                                      topRight: Radius.circular(20),
+                                    ),
+                                    child: Image.network(
+                                      'https://image.tmdb.org/t/p/w500' +
+                                          (tv.posterPath ?? ''),
+                                      height: 110,
+                                      width: double.infinity,
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.all(10),
+                                    child: Text(
+                                      tv.name ?? '',
+                                      style: GoogleFonts.poppins(
+                                          fontSize: 16, color: Colors.white),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.only(
+                                        top: 5, bottom: 5, left: 10, right: 10),
+                                    child: RatingStars(
+                                      valueLabelVisibility: false,
+                                      maxValue: 10,
+                                      starSize: 10,
+                                      starCount: tv.voteAverage!.toInt(),
+                                      value: tv.voteAverage!.toDouble(),
+                                    ),
+                                  ),
+                                  Flexible(
+                                      child: Padding(
+                                    padding: const EdgeInsets.all(10),
+                                    child: Text(tv.overview ?? '',
+                                        style: GoogleFonts.poppins(
+                                            fontSize: 10, color: Colors.grey),
+                                        maxLines: 3,
+                                        overflow: TextOverflow.fade,
+                                        softWrap: true),
+                                  ))
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
 
                 // Text('dsdfsdfsdfsda',style: TextStyle(color: Colors.white),),
               ],
@@ -375,5 +410,35 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         ),
       ),
     );
+  }
+}
+
+class DefaultTabControllerExample extends StatelessWidget {
+  const DefaultTabControllerExample({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return DefaultTabController(
+        length: 3,
+        child: Column(
+          children: [
+            TabBar(
+              tabs: [
+                Tab(text: 'Airing Today'),
+                Tab(text: 'Top Rated'),
+                Tab(text: 'Save'),
+              ],
+            ),
+            Expanded(
+              child: TabBarView(
+                children: [
+                  Center(child: Text('Airing Today')),
+                  Center(child: Text('Top Rated')),
+                  Center(child: Text('Save')),
+                ],
+              ),
+            ),
+          ],
+        ));
   }
 }

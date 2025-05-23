@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_stars/flutter_rating_stars.dart';
 import 'package:flutter_tts/flutter_tts.dart';
@@ -7,6 +9,8 @@ import 'package:miniprojectmovieapp/config/approute.dart';
 import 'package:miniprojectmovieapp/config/network_service.dart';
 import 'package:miniprojectmovieapp/model/airing_model.dart';
 import 'package:miniprojectmovieapp/model/keyword_model.dart';
+import 'package:miniprojectmovieapp/provider/favorite_provider.dart';
+import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 class DetailPage extends StatefulWidget {
@@ -35,6 +39,7 @@ class _DetailPageState extends State<DetailPage> {
 
   @override
   Widget build(BuildContext context) {
+    final provider = Provider.of<FavoriteProvider>(context);
     Object? arguments = ModalRoute.of(context)!.settings.arguments;
     _id = arguments.toString();
     if (arguments is Result) {
@@ -203,8 +208,20 @@ class _DetailPageState extends State<DetailPage> {
                         color: Colors.yellow,
                       ),
                       IconButton(
-                        onPressed: () {},
-                        icon: Icon(Icons.favorite_border),
+                        onPressed: () {
+                          if (_movieModel != null) {
+                            if (provider
+                                .isFavorite(_movieModel!.id.toString())) {
+                              provider.removeFromFavorites(_movieModel!);
+                            } else {
+                              provider.addToFavorites(_movieModel!);
+                            }
+                          }
+                        },
+                        icon: Icon(
+                            provider.isFavorite(_movieModel!.id.toString())
+                                ? Icons.favorite
+                                : Icons.favorite_border),
                         color: Colors.red,
                       ),
                       IconButton(
